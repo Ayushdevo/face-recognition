@@ -438,15 +438,23 @@ Contributions are welcome.
 This project is licensed under the MIT License.
 
 ---
-
 # 👨‍💻 Author
 
-**Ayush Tiwari**
+## Ayush Tiwari
 
-AI Engineer • Data Scientist • Computer Vision Enthusiast
+**AI Engineer • Machine Learning Engineer • Computer Vision Enthusiast**
+
+* **GitHub:** https://github.com/Ayushdevo
+* **LinkedIn:** https://www.linkedin.com/in/ayus-tiwari
+* **Email:** [ayushtiwaridsai@gmail.com](mailto:ayushtiwaridsai@gmail.com)
 
 ---
 
-## ⭐ If you found this project useful, consider giving it a Star on GitHub!
+## ⭐ Support the Project
 
-Building intelligent systems, one frame at a time.
+If you found this project useful, please consider giving it a ⭐ on GitHub. Your support helps improve the project and motivates future development.
+
+---
+
+*"Building intelligent AI systems that bridge research and real-world applications."*
+
