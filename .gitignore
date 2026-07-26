@@ -1,0 +1,19 @@
+# Virtual Environment
+venv/
+.venv/
+env/
+
+# Python Cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# User Outputs & Telemetry Logs
+logs/
+recordings/
+screenshots/
+
+# Large Model Weights (Keep the folder structure but ignore binary files)
+models/*.onnx
+MultiFaceAnalytics/models/*.onnx
