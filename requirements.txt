@@ -3,7 +3,7 @@ streamlit-webrtc
 opencv-python-headless
 av
 numpy
-mediapipe
+mediapipe==0.10.9
 torch
 torchvision
 onnx
