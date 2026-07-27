@@ -6,3 +6,5 @@ numpy
 mediapipe
 torch
 torchvision
+onnx
+onnxscript
