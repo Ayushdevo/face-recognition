@@ -8,22 +8,28 @@ class FaceDetector:
     bounding box extraction, and 3D/2D landmark detection.
     """
     def __init__(self, max_num_faces=20, min_detection_confidence=0.5, min_tracking_confidence=0.5):
-        # Safe resolution for MediaPipe solutions namespace across different versions
         try:
-            face_mesh_sol = mp.solutions.face_mesh
-            hands_sol = mp.solutions.hands
+            # Standard legacy solutions access
+            self.mp_face_mesh = mp.solutions.face_mesh
+            self.mp_hands = mp.solutions.hands
         except AttributeError:
-            import mediapipe.python.solutions.face_mesh as face_mesh_sol
-            import mediapipe.python.solutions.hands as hands_sol
+            # Fallback for modern MediaPipe builds where solutions are structured differently or omitted
+            try:
+                import mediapipe.python.solutions as mp_sol  # type: ignore
+                self.mp_face_mesh = mp_sol.face_mesh
+                self.mp_hands = mp_sol.hands
+            except Exception:
+                raise ImportError(
+                    "Your installed version of MediaPipe does not support legacy 'solutions'. "
+                    "Please pin mediapipe version to 0.10.14 or lower in requirements.txt."
+                )
 
-        self.mp_face_mesh = face_mesh_sol
         self.face_mesh = self.mp_face_mesh.FaceMesh(
             max_num_faces=max_num_faces,
             refine_landmarks=True,  # Includes detailed eye/iris coordinates
             min_detection_confidence=min_detection_confidence,
             min_tracking_confidence=min_tracking_confidence
         )
-        self.mp_hands = hands_sol
         self.hands = self.mp_hands.Hands(
             max_num_hands=4, # support up to 4 hands simultaneously
             min_detection_confidence=min_detection_confidence,
