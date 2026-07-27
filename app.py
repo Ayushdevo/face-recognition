@@ -7,7 +7,7 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 models_dir = os.path.join(current_dir, "MultiFaceAnalytics", "models")
 sys.path.append(os.path.join(current_dir, "MultiFaceAnalytics"))
 
-# Automatically generate placeholder/trained ONNX models on first startup if missing
+# Automatically generate placeholder ONNX models on startup if missing
 if not os.path.exists(models_dir) or not os.listdir(models_dir):
     print("Models directory missing or empty. Generating ONNX models...")
     train_script = os.path.join(current_dir, "MultiFaceAnalytics", "train.py")
@@ -19,12 +19,35 @@ import cv2
 import streamlit as st
 from streamlit_webrtc import WebRtcMode, webrtc_streamer
 
-# Import custom modules from your package
-from src.detector import FaceDetector
-from src.emotion import EmotionRecognizer
-from src.age_gender import AgeGenderPredictor
-from src.pose import HeadPoseEstimator
-from src.quality import FaceQualityAssessor
+# Safe imports with fallback aliases to prevent crash on naming mismatches
+try:
+    from src.detector import FaceDetector
+except ImportError:
+    from detector import FaceDetector
+
+try:
+    from src.emotion import EmotionRecognizer
+except ImportError:
+    EmotionRecognizer = None
+
+try:
+    from src.age_gender import AgeGenderPredictor
+except ImportError:
+    try:
+        from src.age_gender import AgeGender as AgeGenderPredictor
+    except ImportError:
+        AgeGenderPredictor = None
+
+try:
+    from src.pose import HeadPoseEstimator
+except ImportError:
+    HeadPoseEstimator = None
+
+try:
+    from src.quality import FaceQualityAssessor
+except ImportError:
+    QualityAssessor = None
+
 
 st.set_page_config(
     page_title="MultiFace Analytics AI",
@@ -35,30 +58,33 @@ st.set_page_config(
 st.title("🎭 MultiFace Analytics AI")
 st.markdown("Production-Grade Real-Time Multi-Face Analysis System running in your browser.")
 
-# Sidebar controls
+# Sidebar configuration toggles
 st.sidebar.header("Configuration")
 enable_emotion = st.sidebar.checkbox("Emotion Recognition", value=True)
 enable_age_gender = st.sidebar.checkbox("Age & Gender Prediction", value=True)
 enable_pose = st.sidebar.checkbox("Head Pose Estimation", value=True)
 enable_quality = st.sidebar.checkbox("Face Quality Assessment", value=True)
 
-# Initialize models (cached)
+# Initialize models (cached across reruns)
 @st.cache_resource
 def load_models():
-    detector = FaceDetector()
-    emotion_recognizer = EmotionRecognizer()
-    age_gender_predictor = AgeGenderPredictor()
-    pose_estimator = HeadPoseEstimator()
-    quality_assessor = FaceQualityAssessor()
+    detector = FaceDetector() if 'FaceDetector' in globals() else None
+    emotion_recognizer = EmotionRecognizer() if EmotionRecognizer else None
+    age_gender_predictor = AgeGenderPredictor() if AgeGenderPredictor else None
+    pose_estimator = HeadPoseEstimator() if HeadPoseEstimator else None
+    quality_assessor = FaceQualityAssessor() if 'FaceQualityAssessor' in globals() else None
     return detector, emotion_recognizer, age_gender_predictor, pose_estimator, quality_assessor
 
 detector, emotion_rec, age_gender_pred, pose_est, quality_assessor = load_models()
 
-# Video processing callback for WebRTC
+# Video processing callback for WebRTC live stream
 class VideoProcessor:
     def recv(self, frame: av.VideoFrame) -> av.VideoFrame:
         img = frame.to_ndarray(format="bgr24")
         
+        if detector is None:
+            return frame
+            
         faces = detector.detect(img)
         
         for face in faces:
@@ -69,7 +95,7 @@ class VideoProcessor:
             x1, y1, x2, y2 = map(int, bbox[:4])
             cv2.rectangle(img, (x1, y1), (x2, y2), (0, 255, 0), 2)
             
-            if enable_emotion:
+            if enable_emotion and emotion_rec:
                 try:
                     emotion, conf = emotion_rec.predict(img, [x1, y1, x2, y2])
                     cv2.putText(img, f"{emotion} ({conf:.1f}%)", (x1, max(y1 - 10, 15)), 
