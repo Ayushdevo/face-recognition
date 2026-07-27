@@ -1,16 +1,25 @@
 import sys
 import os
+import subprocess
 
-# Add the MultiFaceAnalytics directory to Python path so internal 'src' imports work
+# Add the MultiFaceAnalytics directory to Python path
 current_dir = os.path.dirname(os.path.abspath(__file__))
+models_dir = os.path.join(current_dir, "MultiFaceAnalytics", "models")
 sys.path.append(os.path.join(current_dir, "MultiFaceAnalytics"))
+
+# Automatically generate placeholder/trained ONNX models on first startup if missing
+if not os.path.exists(models_dir) or not os.listdir(models_dir):
+    print("Models directory missing or empty. Generating ONNX models...")
+    train_script = os.path.join(current_dir, "MultiFaceAnalytics", "train.py")
+    if os.path.exists(train_script):
+        subprocess.run([sys.executable, train_script, "--mode", "placeholder", "--models-dir", models_dir])
 
 import av
 import cv2
 import streamlit as st
 from streamlit_webrtc import WebRtcMode, webrtc_streamer
 
-# Import custom modules from your MultiFaceAnalytics/src package
+# Import custom modules from your package
 from src.detector import FaceDetector
 from src.emotion import EmotionRecognizer
 from src.age_gender import AgeGenderPredictor
@@ -26,14 +35,14 @@ st.set_page_config(
 st.title("🎭 MultiFace Analytics AI")
 st.markdown("Production-Grade Real-Time Multi-Face Analysis System running in your browser.")
 
-# Sidebar controls for toggles
+# Sidebar controls
 st.sidebar.header("Configuration")
 enable_emotion = st.sidebar.checkbox("Emotion Recognition", value=True)
 enable_age_gender = st.sidebar.checkbox("Age & Gender Prediction", value=True)
 enable_pose = st.sidebar.checkbox("Head Pose Estimation", value=True)
 enable_quality = st.sidebar.checkbox("Face Quality Assessment", value=True)
 
-# Initialize models (cached to load only once across reruns)
+# Initialize models (cached)
 @st.cache_resource
 def load_models():
     detector = FaceDetector()
@@ -45,16 +54,14 @@ def load_models():
 
 detector, emotion_rec, age_gender_pred, pose_est, quality_assessor = load_models()
 
-# Video processing callback for WebRTC live stream
+# Video processing callback for WebRTC
 class VideoProcessor:
     def recv(self, frame: av.VideoFrame) -> av.VideoFrame:
         img = frame.to_ndarray(format="bgr24")
         
-        # 1. Detect faces using your pipeline
         faces = detector.detect(img)
         
         for face in faces:
-            # Extract bounding box coordinates based on your detector output format
             bbox = face.get('box', face.get('bbox'))
             if bbox is None:
                 continue
@@ -62,7 +69,6 @@ class VideoProcessor:
             x1, y1, x2, y2 = map(int, bbox[:4])
             cv2.rectangle(img, (x1, y1), (x2, y2), (0, 255, 0), 2)
             
-            # Optional module overlays depending on sidebar toggles
             if enable_emotion:
                 try:
                     emotion, conf = emotion_rec.predict(img, [x1, y1, x2, y2])
@@ -73,7 +79,6 @@ class VideoProcessor:
 
         return av.VideoFrame.from_ndarray(img, format="bgr24")
 
-# Streamlit-WebRTC component to stream browser webcam to Python backend
 webrtc_streamer(
     key="multiface-analytics",
     mode=WebRtcMode.SENDRECV,
