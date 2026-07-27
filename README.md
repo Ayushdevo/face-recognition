@@ -449,7 +449,8 @@ This project is licensed under the MIT License.
 * **Email:** [ayushtiwaridsai@gmail.com](mailto:ayushtiwaridsai@gmail.com)
 
 ---
-
+**LIVE URL**
+➡️ https://face-recognition-ayus.streamlit.app/
 ## ⭐ Support the Project
 
 If you found this project useful, please consider giving it a ⭐ on GitHub. Your support helps improve the project and motivates future development.
