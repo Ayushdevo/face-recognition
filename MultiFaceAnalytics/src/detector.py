@@ -8,14 +8,22 @@ class FaceDetector:
     bounding box extraction, and 3D/2D landmark detection.
     """
     def __init__(self, max_num_faces=20, min_detection_confidence=0.5, min_tracking_confidence=0.5):
-        self.mp_face_mesh = mp.solutions.face_mesh
+        # Safe resolution for MediaPipe solutions namespace across different versions
+        try:
+            face_mesh_sol = mp.solutions.face_mesh
+            hands_sol = mp.solutions.hands
+        except AttributeError:
+            import mediapipe.python.solutions.face_mesh as face_mesh_sol
+            import mediapipe.python.solutions.hands as hands_sol
+
+        self.mp_face_mesh = face_mesh_sol
         self.face_mesh = self.mp_face_mesh.FaceMesh(
             max_num_faces=max_num_faces,
             refine_landmarks=True,  # Includes detailed eye/iris coordinates
             min_detection_confidence=min_detection_confidence,
             min_tracking_confidence=min_tracking_confidence
         )
-        self.mp_hands = mp.solutions.hands
+        self.mp_hands = hands_sol
         self.hands = self.mp_hands.Hands(
             max_num_hands=4, # support up to 4 hands simultaneously
             min_detection_confidence=min_detection_confidence,
@@ -81,10 +89,6 @@ class FaceDetector:
                 bbox = [x1, y1, x2, y2]
                 
                 # Compute a quality/confidence heuristic for detection
-                # We can measure landmark shape variance or stability.
-                # A stable face will have a high average landmark density.
-                # We will output a base high-confidence value since it successfully matched.
-                # We add a tiny variation based on face scale and position for visual realism.
                 scale_factor = (box_w * box_h) / (img_w * img_h)
                 edge_penalty = 0.0
                 # Penalize faces very close to boundaries (since landmarks might crop)
